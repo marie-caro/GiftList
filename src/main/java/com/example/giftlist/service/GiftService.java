@@ -3,6 +3,7 @@ package com.example.giftlist.service;
 import com.example.giftlist.exception.GiftListNotFoundException;
 import com.example.giftlist.exception.GiftNotFoundException;
 import com.example.giftlist.exception.PersonNotFoundException;
+import com.example.giftlist.model.Category;
 import com.example.giftlist.model.Gift;
 import com.example.giftlist.model.GiftList;
 import com.example.giftlist.model.Person;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 public class GiftService {
@@ -43,8 +46,12 @@ public class GiftService {
         return optional.orElseThrow(() -> new GiftNotFoundException(id));
     }
 
-    public List<Gift> readAll() {
-        return repository.findAll();
+    public Page<Gift> readByCategory(Category category, Pageable pageable) {
+        return repository.findByCategory(category, pageable);
+    }
+
+    public Page<Gift> readAll(Pageable pageable) {
+        return repository.findAll(pageable);
     }
 
     public Gift updateGift(Long id, Gift updatedGift) {

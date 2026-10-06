@@ -2,10 +2,9 @@ package com.example.giftlist.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.example.giftlist.model.Person;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface PersonRepository extends JpaRepository<Person, Long> {
+    Page<Person> findByRelationship(String relationship, Pageable pageable);
 }

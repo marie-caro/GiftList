@@ -2,13 +2,17 @@ package com.example.giftlist.controller;
 
 import com.example.giftlist.model.Gift;
 import com.example.giftlist.model.GiftList;
+import com.example.giftlist.model.Occasion;
 import com.example.giftlist.service.GiftListService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
+import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -32,8 +36,10 @@ public class GiftListController {
     @Operation(summary = "Retrieve all gift lists", description = "Retrieve all gift lists")
     @ApiResponse(responseCode = "200", description = "Gift lists retrieved")
     @GetMapping("/giftList")
-    public ResponseEntity<List<GiftList>> readAll() {
-        return ResponseEntity.ok(giftListService.readAll());
+    public ResponseEntity<Page<GiftList>> readAll(@RequestParam(required = false) Occasion occasion, Pageable pageable) {
+        if (occasion != null)
+            return ResponseEntity.ok(giftListService.readByOccasion(occasion, pageable));
+        return ResponseEntity.ok(giftListService.readAll(pageable));
     }
 
     @Operation(summary = "Retrieve gifts", description = "Retrieve all gifts belonging to a gift list")

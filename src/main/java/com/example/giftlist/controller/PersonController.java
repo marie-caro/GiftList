@@ -9,7 +9,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 @RestController
@@ -29,8 +30,10 @@ public class PersonController {
     @Operation(summary = "Retrieve all persons", description = "Retrieve all persons")
     @ApiResponse(responseCode = "200", description = "all persons retrieved")
     @GetMapping("/person")
-    public ResponseEntity<List<Person>> readAll() {
-        return new ResponseEntity<>(personService.readAll(), HttpStatus.OK);
+    public ResponseEntity<Page<Person>> readAll(@RequestParam(required = false) String relationship, Pageable pageable) {
+        if (relationship != null)
+            return ResponseEntity.ok(personService.readByRelationship(relationship, pageable));
+        return ResponseEntity.ok(personService.readAll(pageable));
     }
 
     @Operation(summary = "Retrieve person's gift lists", description = "Retrieve all gift lists belonging to a person")

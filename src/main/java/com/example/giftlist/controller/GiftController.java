@@ -1,5 +1,6 @@
 package com.example.giftlist.controller;
 
+import com.example.giftlist.model.Category;
 import com.example.giftlist.model.Gift;
 import com.example.giftlist.service.GiftService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,7 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @RestController
 public class GiftController {
@@ -30,8 +32,10 @@ public class GiftController {
     @Operation(summary = "Retrieve all gifts", description = "Retrieve all gifts")
     @ApiResponse(responseCode = "200", description = "Gifts retrieved")
     @GetMapping("/gift")
-    public ResponseEntity<List<Gift>> readAll() {
-        return ResponseEntity.ok(giftService.readAll());
+    public ResponseEntity<Page<Gift>> readAll(@RequestParam(required = false) Category category, Pageable pageable) {
+        if (category != null)
+            return ResponseEntity.ok(giftService.readByCategory(category, pageable));
+        return ResponseEntity.ok(giftService.readAll(pageable));
     }
 
     @Operation(summary = "Retrieve gift", description = "Retrieve a gift by its ID")

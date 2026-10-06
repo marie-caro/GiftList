@@ -12,6 +12,7 @@ public class Gift {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     @NotBlank
     private String title;
     private BigDecimal price;

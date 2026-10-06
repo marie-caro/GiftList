@@ -14,13 +14,14 @@ public class Person {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     @NotBlank
     private String name;
     private LocalDate birthday;
     private String relationship;
 
     @JsonManagedReference
-    @OneToMany(mappedBy = "person")
+    @OneToMany(mappedBy = "person", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GiftList> lists;
 
     public Person() {}

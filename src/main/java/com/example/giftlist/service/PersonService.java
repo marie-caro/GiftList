@@ -2,15 +2,14 @@ package com.example.giftlist.service;
 
 import com.example.giftlist.exception.PersonNotFoundException;
 import com.example.giftlist.model.GiftList;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.stereotype.Service;
 import com.example.giftlist.repository.PersonRepository;
 import com.example.giftlist.model.Person;
 
 import java.util.List;
 import java.util.Optional;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 public class PersonService {
@@ -36,8 +35,8 @@ public class PersonService {
         return optional.orElseThrow(() -> new PersonNotFoundException(id));
     }
 
-    public List<Person> readAll() {
-        return repository.findAll();
+    public Page<Person> readAll(Pageable pageable) {
+        return repository.findAll(pageable);
     }
 
     public List<GiftList> readGiftList(Long id) {
@@ -45,6 +44,9 @@ public class PersonService {
         return person.getLists();
     }
 
+    public Page<Person> readByRelationship(String relationship, Pageable pageable) {
+        return repository.findByRelationship(relationship, pageable);
+    }
 
     public Person updatePerson(Long id, Person updatedPerson) {
         Person person = this.repository.findById(id).orElseThrow(() -> new PersonNotFoundException(id));

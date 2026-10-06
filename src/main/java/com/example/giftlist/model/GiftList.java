@@ -15,15 +15,17 @@ public class GiftList {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     @NotBlank
     private String title;
 
+    @Column(nullable = false)
     @NotNull
     @Enumerated(EnumType.STRING)
     private Occasion occasion;
 
     @JsonManagedReference
-    @OneToMany(mappedBy = "list")
+    @OneToMany(mappedBy = "list", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Gift> gifts;
 
     @NotNull

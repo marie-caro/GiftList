@@ -4,9 +4,11 @@ import com.example.giftlist.exception.GiftListNotFoundException;
 import com.example.giftlist.exception.PersonNotFoundException;
 import com.example.giftlist.model.Gift;
 import com.example.giftlist.model.GiftList;
+import com.example.giftlist.model.Occasion;
 import com.example.giftlist.model.Person;
 import com.example.giftlist.repository.GiftListRepository;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
@@ -47,8 +49,12 @@ public class GiftListService {
         return this.readList(id).getGifts();
     }
 
-    public List<GiftList> readAll() {
-        return repository.findAll();
+    public Page<GiftList> readByOccasion(Occasion occasion, Pageable pageable) {
+        return repository.findByOccasion(occasion, pageable);
+    }
+
+    public Page<GiftList> readAll(Pageable pageable) {
+        return repository.findAll(pageable);
     }
 
     public GiftList updateList(Long id, GiftList updatedList) {
