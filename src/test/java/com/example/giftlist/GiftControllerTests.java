@@ -1,6 +1,9 @@
 package com.example.giftlist;
 
 import com.example.giftlist.controller.GiftController;
+import com.example.giftlist.dto.GiftPatchRequest;
+import com.example.giftlist.dto.GiftRequest;
+import com.example.giftlist.dto.GiftResponse;
 import com.example.giftlist.exception.GiftNotFoundException;
 import com.example.giftlist.model.Gift;
 import com.example.giftlist.service.GiftService;
@@ -31,15 +34,19 @@ class GiftControllerTest {
 
     @Test
     void createGift_shouldReturn201() throws Exception {
-        Gift gift = new Gift();
-        gift.setId(1L);
+        GiftRequest gift = new GiftRequest();
         gift.setTitle("Nintendo Switch");
         gift.setPrice(new BigDecimal("299.99"));
 
-        when(giftService.createGift(any(Gift.class)))
-                .thenReturn(gift);
+        GiftResponse result = new GiftResponse();
+        result.setId(1L);
+        result.setTitle("Nintendo Switch");
+        result.setPrice(new BigDecimal("299.99"));
 
-        mockMvc.perform(post("/gift")
+        when(giftService.createGift(eq(1L), any(GiftRequest.class)))
+                .thenReturn(result);
+
+        mockMvc.perform(post("/giftList/1/gift")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -52,12 +59,12 @@ class GiftControllerTest {
                 .andExpect(jsonPath("$.title").value("Nintendo Switch"))
                 .andExpect(jsonPath("$.price").value(299.99));
 
-        verify(giftService).createGift(any(Gift.class));
+        verify(giftService).createGift(eq(1L), any(GiftRequest.class));
     }
 
     @Test
     void readGift_shouldReturn200() throws Exception {
-        Gift gift = new Gift();
+        GiftResponse gift = new GiftResponse();
         gift.setId(1L);
         gift.setTitle("Nintendo Switch");
 
@@ -85,11 +92,11 @@ class GiftControllerTest {
 
     @Test
     void updateGift_shouldReturn200() throws Exception {
-        Gift gift = new Gift();
+        GiftResponse gift = new GiftResponse();
         gift.setId(1L);
         gift.setTitle("Nintendo Switch OLED");
 
-        when(giftService.updateGift(eq(1L), any(Gift.class)))
+        when(giftService.updateGift(eq(1L), any(GiftRequest.class)))
                 .thenReturn(gift);
 
         mockMvc.perform(put("/gift/1")
@@ -104,7 +111,49 @@ class GiftControllerTest {
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.title").value("Nintendo Switch OLED"));
 
-        verify(giftService).updateGift(eq(1L), any(Gift.class));
+        verify(giftService).updateGift(eq(1L), any(GiftRequest.class));
+    }
+
+    @Test
+    void patchGift_shouldReturn404WhenNotFound() throws Exception {
+        when(giftService.patchGift(eq(999L), any(GiftPatchRequest.class)))
+                .thenThrow(new GiftNotFoundException(999L));
+
+        mockMvc.perform(patch("/gift/999")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                                "price": 349.99
+                            }
+                            """))
+                .andExpect(status().isNotFound());
+
+        verify(giftService).patchGift(eq(999L), any(GiftPatchRequest.class));
+    }
+
+    @Test
+    void patchGift_shouldReturn200() throws Exception {
+        GiftResponse response = new GiftResponse();
+        response.setId(1L);
+        response.setTitle("Nintendo Switch");
+        response.setPrice(new BigDecimal("349.99"));
+
+        when(giftService.patchGift(eq(1L), any(GiftPatchRequest.class)))
+                .thenReturn(response);
+
+        mockMvc.perform(patch("/gift/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                                "price": 349.99
+                            }
+                            """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.title").value("Nintendo Switch"))
+                .andExpect(jsonPath("$.price").value(349.99));
+
+        verify(giftService).patchGift(eq(1L), any(GiftPatchRequest.class));
     }
 
     @Test

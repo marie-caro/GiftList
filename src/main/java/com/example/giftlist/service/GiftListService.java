@@ -1,5 +1,9 @@
 package com.example.giftlist.service;
 
+import com.example.giftlist.dto.GiftListPatchRequest;
+import com.example.giftlist.dto.GiftListRequest;
+import com.example.giftlist.dto.GiftListResponse;
+import com.example.giftlist.dto.GiftResponse;
 import com.example.giftlist.exception.GiftListNotFoundException;
 import com.example.giftlist.exception.PersonNotFoundException;
 import com.example.giftlist.model.Gift;
@@ -26,9 +30,30 @@ public class GiftListService {
         this.personRepository = personRepository;
     }
 
-    public GiftList createList(GiftList giftList) {
-        Person person = personRepository.findById(giftList.getPerson().getId())
-                .orElseThrow(() -> new PersonNotFoundException(giftList.getPerson().getId()));
+    private GiftListResponse toResponse(GiftList giftList) {
+        GiftListResponse response = new GiftListResponse();
+
+        response.setId(giftList.getId());
+        response.setTitle(giftList.getTitle());
+        response.setOccasion(giftList.getOccasion());
+
+        return response;
+    }
+
+    private GiftResponse toGiftResponse(Gift gift) {
+        GiftResponse response = new GiftResponse();
+
+        response.setId(gift.getId());
+        response.setTitle(gift.getTitle());
+        response.setCategory(gift.getCategory());
+        response.setLink(gift.getLink());
+        response.setPrice(gift.getPrice());
+        return response;
+    }
+
+    public GiftListResponse createList(Long id, GiftListRequest giftList) {
+        Person person = personRepository.findById(id)
+                .orElseThrow(() -> new PersonNotFoundException(id));
 
         GiftList list = new GiftList();
         list.setTitle(giftList.getTitle());
@@ -36,40 +61,52 @@ public class GiftListService {
         list.setGifts(new ArrayList<>());
         list.setPerson(person);
         repository.save(list);
-        return list;
+        return toResponse(list);
     }
 
-    public GiftList readList(Long id) {
+    public GiftListResponse readList(Long id) {
         Optional<GiftList> optional = repository.findById(id);
         GiftList list = optional.orElseThrow(() -> new GiftListNotFoundException(id));
-        return list;
+        return toResponse(list);
     }
 
-    public List<Gift> readGifts(Long id) {
-        return this.readList(id).getGifts();
+    public List<GiftResponse> readGifts(Long id) {
+        GiftList giftList = repository.findById(id).orElseThrow(() -> new GiftListNotFoundException(id));
+
+        return giftList.getGifts()
+                .stream()
+                .map(this::toGiftResponse)
+                .toList();
     }
 
-    public Page<GiftList> readByOccasion(Occasion occasion, Pageable pageable) {
-        return repository.findByOccasion(occasion, pageable);
+    public Page<GiftListResponse> readByOccasion(Occasion occasion, Pageable pageable) {
+        return repository.findByOccasion(occasion, pageable).map(this::toResponse);
     }
 
-    public Page<GiftList> readAll(Pageable pageable) {
-        return repository.findAll(pageable);
+    public Page<GiftListResponse> readAll(Pageable pageable) {
+        return repository.findAll(pageable).map(this::toResponse);
     }
 
-    public GiftList updateList(Long id, GiftList updatedList) {
-        Person person = personRepository.findById(updatedList.getPerson().getId())
-                .orElseThrow(() -> new PersonNotFoundException(updatedList.getPerson().getId()));
-
+    public GiftListResponse updateList(Long id, GiftListRequest updatedList) {
         Optional<GiftList> optional = repository.findById(id);
         GiftList list = optional.orElseThrow(() -> new GiftListNotFoundException(id));
 
-        list.setGifts(updatedList.getGifts());
         list.setOccasion(updatedList.getOccasion());
-        list.setPerson(person);
         list.setTitle(updatedList.getTitle());
         repository.save(list);
-        return list;
+        return toResponse(list);
+    }
+
+    public GiftListResponse patchList(Long id, GiftListPatchRequest updatedList) {
+        GiftList list = repository.findById(id)
+                .orElseThrow(() -> new GiftListNotFoundException(id));
+
+        if (updatedList.getTitle() != null)
+            list.setTitle(updatedList.getTitle());
+        if (updatedList.getOccasion() != null)
+            list.setOccasion(updatedList.getOccasion());
+
+        return toResponse(repository.save(list));
     }
 
     public void deleteList(Long id) {

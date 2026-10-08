@@ -1,7 +1,11 @@
 package com.example.giftlist.service;
 
+import com.example.giftlist.dto.GiftPatchRequest;
+import com.example.giftlist.dto.GiftRequest;
+import com.example.giftlist.dto.GiftResponse;
 import com.example.giftlist.exception.GiftListNotFoundException;
 import com.example.giftlist.exception.GiftNotFoundException;
+import com.example.giftlist.model.Category;
 import com.example.giftlist.model.Gift;
 import com.example.giftlist.model.GiftList;
 import com.example.giftlist.repository.GiftListRepository;
@@ -34,21 +38,19 @@ class GiftServiceTest {
         GiftList list = new GiftList();
         list.setId(1L);
 
-        Gift input = new Gift();
+        GiftRequest input = new GiftRequest();
         input.setTitle("Nintendo Switch");
         input.setPrice(new BigDecimal("299.99"));
         input.setLink("https://example.com");
-        input.setList(list);
 
         when(giftListRepository.findById(1L))
                 .thenReturn(Optional.of(list));
 
-        Gift result = service.createGift(input);
+        GiftResponse result = service.createGift(1L, input);
 
         assertEquals("Nintendo Switch", result.getTitle());
         assertEquals(new BigDecimal("299.99"), result.getPrice());
         assertEquals("https://example.com", result.getLink());
-        assertEquals(list, result.getList());
 
         verify(repository).save(any(Gift.class));
     }
@@ -58,16 +60,15 @@ class GiftServiceTest {
         GiftList list = new GiftList();
         list.setId(999L);
 
-        Gift input = new Gift();
+        GiftRequest input = new GiftRequest();
         input.setTitle("Nintendo Switch");
-        input.setList(list);
 
         when(giftListRepository.findById(999L))
                 .thenReturn(Optional.empty());
 
         assertThrows(
                 GiftListNotFoundException.class,
-                () -> service.createGift(input)
+                () -> service.createGift(1L, input)
         );
 
         verify(repository, never()).save(any(Gift.class));
@@ -81,7 +82,7 @@ class GiftServiceTest {
         when(repository.findById(1L))
                 .thenReturn(Optional.of(gift));
 
-        Gift result = service.readGift(1L);
+        GiftResponse result = service.readGift(1L);
 
         assertEquals("Nintendo Switch", result.getTitle());
         verify(repository).findById(1L);
@@ -109,11 +110,10 @@ class GiftServiceTest {
         existing.setLink("https://old.example.com");
         existing.setList(list);
 
-        Gift updated = new Gift();
+        GiftRequest updated = new GiftRequest();
         updated.setTitle("Nintendo Switch OLED");
         updated.setPrice(new BigDecimal("349.99"));
         updated.setLink("https://new.example.com");
-        updated.setList(list);
 
         when(giftListRepository.findById(1L))
                 .thenReturn(Optional.of(list));
@@ -124,14 +124,29 @@ class GiftServiceTest {
         when(repository.save(existing))
                 .thenReturn(existing);
 
-        Gift result = service.updateGift(1L, updated);
+        GiftResponse result = service.updateGift(1L, updated);
 
         assertEquals("Nintendo Switch OLED", result.getTitle());
         assertEquals(new BigDecimal("349.99"), result.getPrice());
         assertEquals("https://new.example.com", result.getLink());
-        assertEquals(list, result.getList());
 
         verify(repository).save(existing);
+    }
+
+    @Test
+    void patchGift_shouldThrowWhenGiftDoesNotExist() {
+        GiftPatchRequest updated = new GiftPatchRequest();
+        updated.setPrice(new BigDecimal("349.99"));
+
+        when(repository.findById(999L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                GiftNotFoundException.class,
+                () -> service.patchGift(999L, updated)
+        );
+
+        verify(repository, never()).save(any(Gift.class));
     }
 
     @Test
@@ -139,8 +154,7 @@ class GiftServiceTest {
         GiftList list = new GiftList();
         list.setId(1L);
 
-        Gift updated = new Gift();
-        updated.setList(list);
+        GiftRequest updated = new GiftRequest();
 
         when(giftListRepository.findById(1L))
                 .thenReturn(Optional.of(list));
@@ -157,22 +171,29 @@ class GiftServiceTest {
     }
 
     @Test
-    void updateGift_shouldThrowWhenGiftListDoesNotExist() {
-        GiftList list = new GiftList();
-        list.setId(999L);
+    void patchGift_shouldUpdateOnlyProvidedFields() {
+        Gift existing = new Gift();
+        existing.setTitle("Nintendo Switch");
+        existing.setPrice(new BigDecimal("299.99"));
+        existing.setLink("https://old.example.com");
+        existing.setCategory(Category.ELECTRONICS);
 
-        Gift updated = new Gift();
-        updated.setList(list);
+        GiftPatchRequest updated = new GiftPatchRequest();
+        updated.setPrice(new BigDecimal("349.99"));
 
-        when(giftListRepository.findById(999L))
-                .thenReturn(Optional.empty());
+        when(repository.findById(1L))
+                .thenReturn(Optional.of(existing));
 
-        assertThrows(
-                GiftListNotFoundException.class,
-                () -> service.updateGift(1L, updated)
-        );
+        when(repository.save(existing))
+                .thenReturn(existing);
 
-        verify(repository, never()).save(any(Gift.class));
+        GiftResponse result = service.patchGift(1L, updated);
+
+        assertEquals("Nintendo Switch", result.getTitle());
+        assertEquals(new BigDecimal("349.99"), result.getPrice());
+        assertEquals("https://old.example.com", result.getLink());
+        assertEquals(Category.ELECTRONICS, result.getCategory());
+        verify(repository).save(existing);
     }
 
     @Test

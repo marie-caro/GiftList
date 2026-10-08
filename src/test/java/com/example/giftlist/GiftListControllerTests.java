@@ -1,8 +1,12 @@
 package com.example.giftlist;
 
 import com.example.giftlist.controller.GiftListController;
+import com.example.giftlist.dto.GiftListPatchRequest;
+import com.example.giftlist.dto.GiftListRequest;
+import com.example.giftlist.dto.GiftListResponse;
 import com.example.giftlist.exception.GiftListNotFoundException;
 import com.example.giftlist.model.GiftList;
+import com.example.giftlist.model.Occasion;
 import com.example.giftlist.service.GiftListService;
 
 import org.junit.jupiter.api.Test;
@@ -30,22 +34,19 @@ class GiftListControllerTest {
 
     @Test
     void createGiftList_shouldReturn201() throws Exception {
-        GiftList list = new GiftList();
+        GiftListResponse list = new GiftListResponse();
         list.setId(1L);
         list.setTitle("Aiden Birthday");
 
-        when(giftListService.createList(any(GiftList.class)))
+        when(giftListService.createList(eq(1l), any(GiftListRequest.class)))
                 .thenReturn(list);
 
-        mockMvc.perform(post("/giftList")
+        mockMvc.perform(post("/person/1/giftList")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
                                 "title": "Aiden Birthday",
-                                "occasion": "BIRTHDAY",
-                                "person": {
-                                    "id": 1
-                                }
+                                "occasion": "BIRTHDAY"
                             }
                             """))
                 .andDo(print())
@@ -53,12 +54,12 @@ class GiftListControllerTest {
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.title").value("Aiden Birthday"));
 
-        verify(giftListService).createList(any(GiftList.class));
+        verify(giftListService).createList(eq(1L), any(GiftListRequest.class));
     }
 
     @Test
     void readGiftList_shouldReturn200() throws Exception {
-        GiftList list = new GiftList();
+        GiftListResponse list = new GiftListResponse();
         list.setId(1L);
         list.setTitle("Aiden Birthday");
 
@@ -86,22 +87,22 @@ class GiftListControllerTest {
 
     @Test
     void updateGiftList_shouldReturn200() throws Exception {
-        GiftList list = new GiftList();
-        list.setId(1L);
+        GiftListRequest list = new GiftListRequest();
         list.setTitle("Aiden Christmas");
 
-        when(giftListService.updateList(eq(1L), any(GiftList.class)))
-                .thenReturn(list);
+        GiftListResponse response = new GiftListResponse();
+        response.setTitle("Aiden Christmas");
+        response.setId(1L);
+
+        when(giftListService.updateList(eq(1L), any(GiftListRequest.class)))
+                .thenReturn(response);
 
         mockMvc.perform(put("/giftList/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
                                 "title": "Aiden Christmas",
-                                "occasion": "CHRISTMAS",
-                                "person": {
-                                    "id": 1
-                                }
+                                "occasion": "CHRISTMAS"
                             }
                         """))
                 .andDo(print())
@@ -109,7 +110,49 @@ class GiftListControllerTest {
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.title").value("Aiden Christmas"));
 
-        verify(giftListService).updateList(eq(1L), any(GiftList.class));
+        verify(giftListService).updateList(eq(1L), any(GiftListRequest.class));
+    }
+
+    @Test
+    void patchGiftList_shouldReturn200() throws Exception {
+        GiftListResponse response = new GiftListResponse();
+        response.setId(1L);
+        response.setTitle("Aiden Birthday");
+        response.setOccasion(Occasion.CHRISTMAS);
+
+        when(giftListService.patchList(eq(1L), any(GiftListPatchRequest.class)))
+                .thenReturn(response);
+
+        mockMvc.perform(patch("/giftList/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                                "occasion": "CHRISTMAS"
+                            }
+                            """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.title").value("Aiden Birthday"))
+                .andExpect(jsonPath("$.occasion").value("CHRISTMAS"));
+
+        verify(giftListService).patchList(eq(1L), any(GiftListPatchRequest.class));
+    }
+
+    @Test
+    void patchGiftList_shouldReturn404WhenNotFound() throws Exception {
+        when(giftListService.patchList(eq(999L), any(GiftListPatchRequest.class)))
+                .thenThrow(new GiftListNotFoundException(999L));
+
+        mockMvc.perform(patch("/giftList/999")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                                "occasion": "CHRISTMAS"
+                            }
+                            """))
+                .andExpect(status().isNotFound());
+
+        verify(giftListService).patchList(eq(999L), any(GiftListPatchRequest.class));
     }
 
     @Test

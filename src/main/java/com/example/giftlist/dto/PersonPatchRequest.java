@@ -1,16 +1,13 @@
 package com.example.giftlist.dto;
 
-import jakarta.validation.constraints.NotBlank;
-
 import java.time.LocalDate;
 
-public class PersonRequest {
-    @NotBlank
+public class PersonPatchRequest {
     private String name;
     private LocalDate birthday;
     private String relationship;
 
-    public PersonRequest() {}
+    public PersonPatchRequest() {}
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public LocalDate getBirthday() { return birthday; }

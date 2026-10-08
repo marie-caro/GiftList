@@ -1,5 +1,8 @@
 package com.example.giftlist.service;
 
+import com.example.giftlist.dto.GiftListPatchRequest;
+import com.example.giftlist.dto.GiftListRequest;
+import com.example.giftlist.dto.GiftListResponse;
 import com.example.giftlist.exception.GiftListNotFoundException;
 import com.example.giftlist.exception.PersonNotFoundException;
 import com.example.giftlist.model.GiftList;
@@ -35,22 +38,17 @@ class GiftListServiceTest {
         person.setId(1L);
         person.setName("Aiden");
 
-        GiftList input = new GiftList();
+        GiftListRequest input = new GiftListRequest();
         input.setTitle("Aiden Birthday");
         input.setOccasion(Occasion.BIRTHDAY);
-        input.setPerson(person);
 
         when(personRepository.findById(1L))
                 .thenReturn(Optional.of(person));
 
-        GiftList result = service.createList(input);
+        GiftListResponse result = service.createList(1L, input);
 
         assertEquals("Aiden Birthday", result.getTitle());
         assertEquals(Occasion.BIRTHDAY, result.getOccasion());
-        assertEquals(person, result.getPerson());
-        assertNotNull(result.getGifts());
-        assertTrue(result.getGifts().isEmpty());
-
         verify(repository).save(any(GiftList.class));
     }
 
@@ -59,17 +57,13 @@ class GiftListServiceTest {
         Person person = new Person();
         person.setId(999L);
 
-        GiftList input = new GiftList();
+        GiftListRequest input = new GiftListRequest();
         input.setTitle("Nobody's List");
-        input.setPerson(person);
 
         when(personRepository.findById(999L))
                 .thenReturn(Optional.empty());
 
-        assertThrows(
-                PersonNotFoundException.class,
-                () -> service.createList(input)
-        );
+        assertThrows(PersonNotFoundException.class, () -> service.createList(eq(1L), input));
 
         verify(repository, never()).save(any(GiftList.class));
     }
@@ -82,7 +76,7 @@ class GiftListServiceTest {
         when(repository.findById(1L))
                 .thenReturn(Optional.of(list));
 
-        GiftList result = service.readList(1L);
+        GiftListResponse result = service.readList(1L);
 
         assertEquals("Aiden Birthday", result.getTitle());
         verify(repository).findById(1L);
@@ -109,13 +103,9 @@ class GiftListServiceTest {
         existing.setOccasion(Occasion.BIRTHDAY);
         existing.setPerson(person);
 
-        GiftList updated = new GiftList();
+        GiftListRequest updated = new GiftListRequest();
         updated.setTitle("Aiden Christmas");
         updated.setOccasion(Occasion.CHRISTMAS);
-        updated.setPerson(person);
-
-        when(personRepository.findById(1L))
-                .thenReturn(Optional.of(person));
 
         when(repository.findById(1L))
                 .thenReturn(Optional.of(existing));
@@ -123,11 +113,10 @@ class GiftListServiceTest {
         when(repository.save(existing))
                 .thenReturn(existing);
 
-        GiftList result = service.updateList(1L, updated);
+        GiftListResponse result = service.updateList(1L, updated);
 
         assertEquals("Aiden Christmas", result.getTitle());
         assertEquals(Occasion.CHRISTMAS, result.getOccasion());
-        assertEquals(person, result.getPerson());
 
         verify(repository).save(existing);
     }
@@ -137,8 +126,7 @@ class GiftListServiceTest {
         Person person = new Person();
         person.setId(1L);
 
-        GiftList updated = new GiftList();
-        updated.setPerson(person);
+        GiftListRequest updated = new GiftListRequest();
 
         when(personRepository.findById(1L))
                 .thenReturn(Optional.of(person));
@@ -148,26 +136,46 @@ class GiftListServiceTest {
 
         assertThrows(
                 GiftListNotFoundException.class,
-                () -> service.updateList(999L, updated)
+                () -> service.updateList(eq(999L), updated)
         );
 
         verify(repository, never()).save(any(GiftList.class));
     }
 
     @Test
-    void updateList_shouldThrowWhenPersonDoesNotExist() {
-        Person person = new Person();
-        person.setId(999L);
+    void patchList_shouldUpdateOnlyProvidedFields() {
+        GiftList existing = new GiftList();
+        existing.setTitle("Aiden Birthday");
+        existing.setOccasion(Occasion.BIRTHDAY);
 
-        GiftList updated = new GiftList();
-        updated.setPerson(person);
+        GiftListPatchRequest updated = new GiftListPatchRequest();
+        updated.setOccasion(Occasion.CHRISTMAS);
 
-        when(personRepository.findById(999L))
+        when(repository.findById(1L))
+                .thenReturn(Optional.of(existing));
+
+        when(repository.save(existing))
+                .thenReturn(existing);
+
+        GiftListResponse result = service.patchList(1L, updated);
+
+        assertEquals("Aiden Birthday", result.getTitle());
+        assertEquals(Occasion.CHRISTMAS, result.getOccasion());
+
+        verify(repository).save(existing);
+    }
+
+    @Test
+    void patchList_shouldThrowWhenGiftListDoesNotExist() {
+        GiftListPatchRequest updated = new GiftListPatchRequest();
+        updated.setOccasion(Occasion.CHRISTMAS);
+
+        when(repository.findById(999L))
                 .thenReturn(Optional.empty());
 
         assertThrows(
-                PersonNotFoundException.class,
-                () -> service.updateList(1L, updated)
+                GiftListNotFoundException.class,
+                () -> service.patchList(999L, updated)
         );
 
         verify(repository, never()).save(any(GiftList.class));

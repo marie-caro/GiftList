@@ -1,13 +1,14 @@
 package com.example.giftlist.controller;
 
-import com.example.giftlist.model.Gift;
-import com.example.giftlist.model.GiftList;
+import com.example.giftlist.dto.GiftListPatchRequest;
+import com.example.giftlist.dto.GiftListRequest;
+import com.example.giftlist.dto.GiftListResponse;
+import com.example.giftlist.dto.GiftResponse;
 import com.example.giftlist.model.Occasion;
 import com.example.giftlist.service.GiftListService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,15 +29,15 @@ public class GiftListController {
     @ApiResponse(responseCode = "201", description = "Gift list created")
     @ApiResponse(responseCode = "400", description = "Invalid gift list data")
     @ApiResponse(responseCode = "404", description = "Person not found")
-    @PostMapping("/giftList")
-    public ResponseEntity<GiftList> createGiftList(@Valid @RequestBody GiftList giftList) {
-        return new ResponseEntity<>(giftListService.createList(giftList), HttpStatus.CREATED);
+    @PostMapping("/person/{id}/giftList")
+    public ResponseEntity<GiftListResponse> createGiftList(@PathVariable Long id, @Valid @RequestBody GiftListRequest giftList) {
+        return new ResponseEntity<>(giftListService.createList(id, giftList), HttpStatus.CREATED);
     }
 
     @Operation(summary = "Retrieve all gift lists", description = "Retrieve all gift lists")
     @ApiResponse(responseCode = "200", description = "Gift lists retrieved")
     @GetMapping("/giftList")
-    public ResponseEntity<Page<GiftList>> readAll(@RequestParam(required = false) Occasion occasion, Pageable pageable) {
+    public ResponseEntity<Page<GiftListResponse>> readAll(@RequestParam(required = false) Occasion occasion, Pageable pageable) {
         if (occasion != null)
             return ResponseEntity.ok(giftListService.readByOccasion(occasion, pageable));
         return ResponseEntity.ok(giftListService.readAll(pageable));
@@ -46,7 +47,7 @@ public class GiftListController {
     @ApiResponse(responseCode = "200", description = "Gifts retrieved")
     @ApiResponse(responseCode = "404", description = "Gift list not found")
     @GetMapping("/giftList/{id}/gift")
-    public ResponseEntity<List<Gift>> readGifts(@PathVariable Long id) {
+    public ResponseEntity<List<GiftResponse>> readGifts(@PathVariable Long id) {
         return ResponseEntity.ok(giftListService.readGifts(id));
     }
 
@@ -54,7 +55,7 @@ public class GiftListController {
     @ApiResponse(responseCode = "200", description = "Gift list retrieved")
     @ApiResponse(responseCode = "404", description = "Gift list not found")
     @GetMapping("/giftList/{id}")
-    public ResponseEntity<GiftList> readGiftList(@PathVariable Long id) {
+    public ResponseEntity<GiftListResponse> readGiftList(@PathVariable Long id) {
         return ResponseEntity.ok(giftListService.readList(id));
     }
 
@@ -63,8 +64,16 @@ public class GiftListController {
     @ApiResponse(responseCode = "400", description = "Invalid gift list data")
     @ApiResponse(responseCode = "404", description = "Gift list or Person not found")
     @PutMapping("/giftList/{id}")
-    public ResponseEntity<GiftList> modifyGiftList(@PathVariable Long id, @Valid @RequestBody GiftList giftList) {
+    public ResponseEntity<GiftListResponse> modifyGiftList(@PathVariable Long id, @Valid @RequestBody GiftListRequest giftList) {
         return ResponseEntity.ok(giftListService.updateList(id, giftList));
+    }
+
+    @Operation(summary = "Partially modify gift list", description = "Modify only the provided gift list fields")
+    @ApiResponse(responseCode = "200", description = "Gift list modified")
+    @ApiResponse(responseCode = "404", description = "Gift list not found")
+    @PatchMapping("/giftList/{id}")
+    public ResponseEntity<GiftListResponse> patchGiftList(@PathVariable Long id, @RequestBody GiftListPatchRequest updatedList) {
+        return ResponseEntity.ok(giftListService.patchList(id, updatedList));
     }
 
     @Operation(summary = "Delete gift list", description = "Delete a gift list")

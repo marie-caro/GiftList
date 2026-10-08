@@ -1,5 +1,7 @@
 package com.example.giftlist;
 
+import com.example.giftlist.dto.PersonRequest;
+import com.example.giftlist.dto.PersonResponse;
 import com.example.giftlist.exception.PersonNotFoundException;
 import com.example.giftlist.model.Person;
 import com.example.giftlist.repository.PersonRepository;
@@ -25,12 +27,12 @@ class PersonServiceTests {
 
     @Test
     void createPerson_shouldCreatePerson() {
-        Person input = new Person();
-        input.setName("Aiden");
-        input.setBirthday(LocalDate.of(2000, 5, 10));
-        input.setRelationship("friend");
+        PersonRequest request = new PersonRequest();
+        request.setName("Aiden");
+        request.setBirthday(LocalDate.of(2000, 5, 10));
+        request.setRelationship("friend");
 
-        Person result = service.createPerson(input);
+        PersonResponse result = service.createPerson(request);
 
         assertEquals("Aiden", result.getName());
         assertEquals(LocalDate.of(2000, 5, 10), result.getBirthday());
@@ -46,7 +48,7 @@ class PersonServiceTests {
 
         when(repository.findById(1L)).thenReturn(Optional.of(person));
 
-        Person result = service.readPerson(1L);
+        PersonResponse result = service.readPerson(1L);
 
         assertEquals("Aiden", result.getName());
         verify(repository).findById(1L);
@@ -69,7 +71,7 @@ class PersonServiceTests {
         existing.setBirthday(LocalDate.of(2000, 5, 10));
         existing.setRelationship("friend");
 
-        Person updated = new Person();
+        PersonRequest updated = new PersonRequest();
         updated.setName("Aiden Smith");
         updated.setBirthday(LocalDate.of(2000, 5, 11));
         updated.setRelationship("best friend");
@@ -77,7 +79,7 @@ class PersonServiceTests {
         when(repository.findById(1L)).thenReturn(Optional.of(existing));
         when(repository.save(existing)).thenReturn(existing);
 
-        Person result = service.updatePerson(1L, updated);
+        PersonResponse result = service.updatePerson(1L, updated);
 
         assertEquals("Aiden Smith", result.getName());
         assertEquals(LocalDate.of(2000, 5, 11), result.getBirthday());
@@ -90,7 +92,7 @@ class PersonServiceTests {
     void updatePerson_shouldThrowWhenPersonDoesNotExist() {
         when(repository.findById(999L)).thenReturn(Optional.empty());
 
-        Person updated = new Person();
+        PersonRequest updated = new PersonRequest();
         updated.setName("Nobody");
 
         assertThrows(
